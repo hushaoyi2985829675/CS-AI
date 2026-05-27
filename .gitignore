@@ -1,0 +1,45 @@
+# IDE
+.vscode/
+.idea/
+
+# Android SDK & JDK
+android-sdk/
+jdk-17.0.13+11/
+jdk17.zip
+
+# Expo
+weight-loss-app/frontend/.expo/
+
+# Node
+node_modules/
+weight-loss-app/frontend/node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+weight-loss-app/backend/__pycache__/
+weight-loss-app/backend/app/__pycache__/
+weight-loss-app/backend/app/routers/__pycache__/
+
+# Environment
+.env
+weight-loss-app/backend/.env
+
+# Logs
+debug.log
+*.log
+
+# Build artifacts
+*.apk
+*.aab
+*.ipa
+dist/
+build/
+
+# Misc
+qc
+download-expo-go.js
+expo-go.apk
+*.DS_Store
+Thumbs.db
