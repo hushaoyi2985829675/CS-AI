@@ -1,17 +1,46 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Button, TextInput, Text, Card, IconButton } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Linking, Platform } from 'react-native';
+import { Button, TextInput, Text, Card, IconButton, Divider } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
+import { getSteamDirectLoginUrl, setToken } from '../api';
 
 const AuthScreen: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [steamLoading, setSteamLoading] = useState(false);
 
-  const { login, register, isLoading } = useAppContext();
+  const { login, register, isLoading, fetchData } = useAppContext();
+
+  useEffect(() => {
+    const handleSteamCallback = async () => {
+      try {
+        let url: string | null = null;
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          url = window.location.href;
+        } else {
+          url = await Linking.getInitialURL();
+        }
+        if (!url) return;
+        const parsed = new URL(url);
+        const steamLogin = parsed.searchParams.get('steam_login');
+        const steamBind = parsed.searchParams.get('steam_bind');
+        const token = parsed.searchParams.get('token');
+        if ((steamLogin === 'success' || steamBind === 'success') && token) {
+          await setToken(token);
+          await fetchData();
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            window.history.replaceState({}, '', parsed.pathname);
+          }
+        }
+      } catch (e) {
+        console.error('Steam 回调处理失败:', e);
+      }
+    };
+    handleSteamCallback();
+  }, []);
 
   const handleLogin = async () => {
     setError('');
@@ -26,15 +55,27 @@ const AuthScreen: React.FC = () => {
     }
   };
 
+  const handleSteamLogin = async () => {
+    setError('');
+    setSteamLoading(true);
+    try {
+      const url = await getSteamDirectLoginUrl();
+      if (Platform.OS === 'web') {
+        window.location.href = url;
+      } else {
+        await Linking.openURL(url);
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Steam 登录失败，请重试');
+    } finally {
+      setSteamLoading(false);
+    }
+  };
+
   const handleRegister = async () => {
     setError('');
-    if (!username || !email || !password || !confirmPassword) {
+    if (!username || !password || !confirmPassword) {
       setError('请填写所有必填字段');
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('请输入有效的邮箱地址');
       return;
     }
     if (password !== confirmPassword) {
@@ -42,7 +83,7 @@ const AuthScreen: React.FC = () => {
       return;
     }
     try {
-      await register({ username, email, password });
+      await register({ username, password });
     } catch (e: any) {
       setError(e?.message || '注册失败，请重试');
     }
@@ -71,18 +112,6 @@ const AuthScreen: React.FC = () => {
               style={styles.input}
               disabled={isLoading}
             />
-
-            {!isLogin && (
-              <TextInput
-                label="邮箱"
-                value={email}
-                onChangeText={setEmail}
-                mode="outlined"
-                style={styles.input}
-                keyboardType="email-address"
-                disabled={isLoading}
-              />
-            )}
 
             <TextInput
               label="密码"
@@ -122,6 +151,20 @@ const AuthScreen: React.FC = () => {
               disabled={isLoading}
             >
               {isLogin ? '还没有账号？注册' : '已有账号？登录'}
+            </Button>
+
+            <Divider style={styles.divider} />
+
+            <Button
+              mode="outlined"
+              onPress={handleSteamLogin}
+              style={styles.steamButton}
+              icon="steam"
+              loading={steamLoading}
+              disabled={isLoading || steamLoading}
+              textColor="#1b2838"
+            >
+              使用 Steam 登录
             </Button>
           </View>
         </Card.Content>
@@ -177,6 +220,12 @@ const styles = StyleSheet.create({
   },
   switchBtn: {
     marginTop: 5,
+  },
+  divider: {
+    marginVertical: 10,
+  },
+  steamButton: {
+    borderColor: '#1b2838',
   },
 });
 

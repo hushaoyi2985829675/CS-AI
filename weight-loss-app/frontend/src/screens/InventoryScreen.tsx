@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, FlatList, Alert, Modal, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Linking } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, FlatList, Alert, Modal, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { Text, Card, IconButton, TextInput, Button, FAB, ActivityIndicator, Chip } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 import { InventoryItem } from '../types';
 import SteamBindPrompt from '../components/SteamBindPrompt';
-import { getToken } from '../api';
+import * as api from '../api';
 
 const THEME_COLOR = '#1a73e8';
 
@@ -24,17 +24,43 @@ const WEAR_OPTIONS = ['全新', '崭新', '略磨', '久经', '破损', '战痕'
 const InventoryScreen: React.FC = () => {
   const { inventoryItems, isLoading, addItem, updateItem, removeItem, user } = useAppContext();
 
+  const [steamInventoryLoading, setSteamInventoryLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+
+  useEffect(() => {
+    const fetchSteamInventory = async () => {
+      if (user?.id && user?.steamId) {
+        setSteamInventoryLoading(true);
+        try {
+          const data = await api.getSteamInventory(user.id);
+          console.log('Steam 库存数据:', data);
+        } catch (e: any) {
+          const msg = e?.message || '获取 Steam 库存失败';
+          setToastMessage(msg);
+          setTimeout(() => setToastMessage(''), 3000);
+        } finally {
+          setSteamInventoryLoading(false);
+        }
+      }
+    };
+    fetchSteamInventory();
+  }, [user?.id, user?.steamId]);
+
   if (!user?.steamId) {
     return (
       <SteamBindPrompt
         onBind={async () => {
-          const t = await getToken();
-          if (t) Linking.openURL(`http://localhost:8000/api/auth/steam/login?token=${t}`);
+          try {
+            const url = await api.getSteamLoginUrl();
+            window.location.href = url;
+          } catch (e: any) {
+            alert(e?.message || '获取Steam登录地址失败');
+          }
         }}
       />
     );
   }
-  const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -256,6 +282,12 @@ const InventoryScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {toastMessage ? (
+        <View style={styles.toast}>
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </View>
+      ) : null}
 
       <FAB
         icon="plus"
@@ -603,6 +635,26 @@ const styles = StyleSheet.create({
     bottom: 20,
     backgroundColor: THEME_COLOR,
     borderRadius: 28,
+  },
+  toast: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: '#e74c3c',
+    borderRadius: 8,
+    padding: 12,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    zIndex: 1000,
+  },
+  toastText: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
   },
   modalContainer: {
     flex: 1,

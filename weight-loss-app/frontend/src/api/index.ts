@@ -176,3 +176,34 @@ export const getLatestAnalysisReport = async (): Promise<AnalysisReport> => {
   if (!response.ok) throw new Error('获取最新分析报告失败');
   return response.json();
 };
+
+export const getSteamLoginUrl = async (): Promise<string> => {
+  const headers = await authHeaders();
+  const response = await fetch(`${BASE_URL}/api/auth/steam/login`, { headers });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: '获取Steam登录地址失败' }));
+    throw new Error(typeof err.detail === 'string' ? err.detail : '获取Steam登录地址失败');
+  }
+  const data = await response.json();
+  return data.url;
+};
+
+export const getSteamDirectLoginUrl = async (): Promise<string> => {
+  const response = await fetch(`${BASE_URL}/api/auth/steam/login-with-steam`);
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: '获取Steam登录地址失败' }));
+    throw new Error(typeof err.detail === 'string' ? err.detail : '获取Steam登录地址失败');
+  }
+  const data = await response.json();
+  return data.url;
+};
+
+export const getSteamInventory = async (userId: number): Promise<any> => {
+  const headers = await authHeaders();
+  const response = await fetch(`${BASE_URL}/api/auth/steam/inventory/${userId}`, { headers });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({ detail: '获取Steam库存失败' }));
+    throw new Error(typeof err.detail === 'string' ? err.detail : '获取Steam库存失败');
+  }
+  return response.json();
+};

@@ -20,6 +20,23 @@ def get_user_by_steam_id(db: Session, steam_id: str) -> Optional[User]:
     return db.query(User).filter(User.steam_id == steam_id).first()
 
 
+def create_user_from_steam(db: Session, steam_id: str) -> User:
+    from .security import get_password_hash
+    import secrets
+    username = f"steam_{steam_id}"
+    random_password = secrets.token_hex(32)
+    hashed_password = get_password_hash(random_password)
+    db_user = User(
+        username=username,
+        hashed_password=hashed_password,
+        steam_id=steam_id,
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+
 def create_user(db: Session, user: UserCreate) -> User:
     from .security import get_password_hash
     hashed_password = get_password_hash(user.password)

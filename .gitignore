@@ -37,6 +37,10 @@ debug.log
 dist/
 build/
 
+# Portable Dev Environment
+android-dev-portable/
+android-dev-portable.zip
+
 # Misc
 qc
 download-expo-go.js

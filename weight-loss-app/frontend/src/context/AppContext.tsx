@@ -142,15 +142,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   useEffect(() => {
-    fetchData().then((userData) => {
-      if (typeof window !== 'undefined' && window.location) {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('steam_bind') === 'success') {
-          window.history.replaceState({}, '', window.location.pathname);
-          fetchData();
-        }
-      }
-    });
+    fetchData();
   }, []);
 
   return (

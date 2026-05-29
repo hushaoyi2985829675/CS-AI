@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Text, Card, Button, ActivityIndicator } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 import { AnalysisReport } from '../types';
@@ -13,8 +13,12 @@ const AnalysisScreen: React.FC = () => {
     return (
       <SteamBindPrompt
         onBind={async () => {
-          const t = await api.getToken();
-          if (t) Linking.openURL(`http://localhost:8000/api/auth/steam/login?token=${t}`);
+          try {
+            const url = await api.getSteamLoginUrl();
+            window.location.href = url;
+          } catch (e: any) {
+            alert(e?.message || '获取Steam登录地址失败');
+          }
         }}
       />
     );

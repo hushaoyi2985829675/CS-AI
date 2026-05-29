@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, StyleSheet, Linking } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useAppContext } from '../context/AppContext';
 import SteamBindPrompt from '../components/SteamBindPrompt';
-import { getToken } from '../api';
+import * as api from '../api';
 
 const HomeScreen: React.FC = () => {
   const { user } = useAppContext();
@@ -11,8 +11,12 @@ const HomeScreen: React.FC = () => {
     return (
       <SteamBindPrompt
         onBind={async () => {
-          const t = await getToken();
-          if (t) Linking.openURL(`http://localhost:8000/api/auth/steam/login?token=${t}`);
+          try {
+            const url = await api.getSteamLoginUrl();
+            window.location.href = url;
+          } catch (e: any) {
+            alert(e?.message || '获取Steam登录地址失败');
+          }
         }}
       />
     );
